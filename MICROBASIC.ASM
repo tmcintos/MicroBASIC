@@ -153,7 +153,7 @@ KEYBD1  BSR INCH
         CMPA #$00
         BNE KEYB11
         DECB
-        BNE KEYBD11
+        BNE KEYBD1
 KEYB10  JMP READY
 KEYB11  CMPA CANCEL
         BEQ DEL
@@ -702,7 +702,7 @@ NXTLIN  LDX  BASPNT
 NXTL12  LDAA 0,X
         INX
         CMPA #$1E
-        BNE  NXTLIN
+        BNE  NXTL12
         STX BASLIN
         RTS
 
@@ -1139,7 +1139,7 @@ PRINT1  LDAA 0,X
 PRINT2  JSR  OUTCH
         JSR ENLINE
         BRA PRINT1
-PRINT4  CMPB #$1E
+PRINT4  CMPA #$1E
         BNE PRINT6
         DEX
         LDAA 0,X
@@ -1424,7 +1424,7 @@ FOR8    BNE FOR2
         STAA 0,X
         INX
         LDAB BASLIN+1
-        STAA 0,X
+        STAB 0,X
         INX
         STX FORPNT
         JMP BASIC
