@@ -257,6 +257,7 @@ STORE   PSHA
         INX
         STX AESTK
         DEX
+        DEX
         LDX 0,X
         STAA 0,X
         STAB 1,X
@@ -272,6 +273,7 @@ IND     BSR PUSHX
         INX
         INX
         STX AESTK
+        DEX
         DEX
         LDX 0,X
         LDAA 0,X
@@ -588,6 +590,7 @@ MDS2    INX
 MDS3    STAA TSIGN
         DEX
         DEX
+        DEX
         RTS
 
 DIV     BSR MDSIGN
@@ -678,7 +681,7 @@ FIND2   BSR  INXSKP
 HIBALL  LDX  NEXTBA
 FIND3   SEC
 FIND4   STX WORKBA
-        JSR PULLAE
+        JSR PULPSH
         RTS
 
 SKIPSP  LDAA 0,X
@@ -711,7 +714,6 @@ CCODE   BSR SKIPSP
         STS SAVESP
         LDX #COMMAN-1
 LOOP3   LDS  INDEX4
-        DES
 LOOP4   INX
         PULA
         LDAB 0,X
@@ -820,6 +822,7 @@ RUN2    STAA 0,X
 CLIST   LDX #PGCNTL
         JSR OUTPUT
         LDX  BASPNT
+        DEX
 CLIST1  JSR SKIPSP
         CMPA #$1E
         BEQ CLIST4
