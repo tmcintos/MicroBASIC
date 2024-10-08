@@ -714,6 +714,7 @@ CCODE   BSR SKIPSP
         STS SAVESP
         LDX #COMMAN-1
 LOOP3   LDS  INDEX4
+        DES
 LOOP4   INX
         PULA
         LDAB 0,X
@@ -822,7 +823,6 @@ RUN2    STAA 0,X
 CLIST   LDX #PGCNTL
         JSR OUTPUT
         LDX  BASPNT
-        DEX
 CLIST1  JSR SKIPSP
         CMPA #$1E
         BEQ CLIST4
