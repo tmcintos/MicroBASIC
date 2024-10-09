@@ -1,7 +1,7 @@
 all: MICROBASIC.s19 MICROBASIC.bin
 
 %.bin: %.s19
-	mot2bin -p 0 $< > $*.log
+	mot2bin -s E000 $< > $*.log
 
 %.s19: %.ASM
 	as0 $< -l > $*.lst
