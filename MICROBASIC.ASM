@@ -114,7 +114,7 @@ GOLIST  FCC /GOSUB/
         FCC /NEXT/
         FCB $1E
         FDB NEXT
-        FCC /EEM/
+        FCC /REM/
         FCB $1E
         FDB REMARK
 PAUMSG  FCC /PAUSE/
