@@ -58,7 +58,7 @@ BUFFER  RMB $50
 
         ORG $0100
 PROGM   JMP START
-VARTAB  RMB 78
+* COMMAND TABLE - MUST FIT WITHIN A PAGE!
         FCB $1E
         FDB 0       ; PLACEHOLDER EXPECTED BY OUTLIN
 COMMAN  FCC /RUN/
@@ -123,9 +123,9 @@ PAUMSG  FCC /PAUSE/
         FDB PAUSE
         FCB $20
 COMEND  FCB $1E
+
 IMPLET  FDB LET
-        RMB 60
-ASTACK  EQU *-1
+
 RDYMSG  FCB $0D
         FCB $0A
         FCB $15
@@ -133,20 +133,30 @@ RDYMSG  FCB $0D
         FCB $15
         FCC /READY/
         FCB $1E
-PROMPT  FCB $23
+
+PROMPT  FCB '#
         FCB $00
         FCB $1E
         FCB $1E
+
 PGCNTL  FCB $10
         FCB $16
         FCB $1E
         FCB $1E
         FCB $1E
+
 ERRMS1  FCC /ERROR# /
         FCB $1E
+
 ERRMS2  FCC / IN LINE /
         FCB $1E
-KEYBD   LDAA #$3F
+
+        RMB 60
+ASTACK  EQU *-1
+
+VARSIZ  EQU 78
+VARTAB  RMB VARSIZ
+
         BSR OUTCH
 KEYBD0  LDX #BUFFER
         LDAB #10
@@ -811,7 +821,7 @@ RUN1    INX
         CPX MEMEND
         BNE RUN1
         LDX #VARTAB
-        LDAB  #78
+        LDAB  #VARSIZ
 RUN2    STAA 0,X
         INX
         DECB
