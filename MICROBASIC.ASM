@@ -226,10 +226,12 @@ KEYBD0  LDX #BUFFER
         LDAB #10
 KEYBD1  BSR INCH
         CMPA #$00
-        BNE KEYB11
+        BNE KEYB10
         DECB
         BNE KEYBD1
-KEYB10  JMP READY
+KEYB10  CMPA #03        ; ^C?
+        BNE KEYB11      ; No
+        JMP READY
 KEYB11  CMPA CANCEL
         BEQ DEL
         CMPA #$0D
