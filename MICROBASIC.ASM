@@ -1131,7 +1131,12 @@ PRINT0  JSR  SKIPSP
         INX
 PRINT1  LDAA 0,X
         INX
-        CMPA  #'"
+        CMPA  #'\
+        BNE PRINT11
+        LDAA 0,X
+        INX
+        BRA PRINT2
+PRINT11 CMPA  #'"
         BEQ  PRIN88
         CMPA #$1E
         BNE PRINT2
