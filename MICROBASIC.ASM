@@ -257,7 +257,6 @@ STORE   PSHA
         INX
         STX AESTK
         DEX
-        DEX
         LDX 0,X
         STAA 0,X
         STAB 1,X
@@ -273,7 +272,6 @@ IND     BSR PUSHX
         INX
         INX
         STX AESTK
-        DEX
         DEX
         LDX 0,X
         LDAA 0,X
@@ -588,7 +586,6 @@ MDS2    INX
         BSR NEG
         ADDA #$80
 MDS3    STAA TSIGN
-        DEX
         DEX
         DEX
         RTS
