@@ -9,6 +9,8 @@ The source code has been modified to build using the [motorola-6800-assembler](.
 
 *Note: These instructions assume that you have built and installed my forks of the [motorola-6800-assembler](../../../motorola-6800-assembler) and [Hex2bin-2.5](../../../Hex2bin-2.5).*
 
+*Note: Building the MICROBASIC.mon file for wozmon requires the POSIX `tr` and `sed` utilities, as well as the BSD `hexdump` utility (found in the util-linux package on Linux).
+
 The project may be built by running `make` (tested on macOS 15).
 
 All built products and intermediate files may be removed by running `make clean`.
