@@ -1218,27 +1218,36 @@ INNEX2  JSR PUSHAE
         CLC
         RTS
 
-PRINT   LDX  BASPNT
-PRINT0  JSR  SKIPSP
+* PRINT STRING (RETURNS A=CHAR; (X)=NEXTCHAR; C=0: OK, C=1: NO STRING)
+PRST    JSR SKIPSP
         CMPA #'"
-        BNE PRINT4
+        BNE NOSTR
         INX
-PRINT1  LDAA 0,X
+PRST1   LDAA 0,X
         INX
         CMPA  #'\
-        BNE PRINT11
+        BNE PRST11
         LDAA 0,X
         INX
-        BRA PRINT2
-PRINT11 CMPA  #'"
-        BEQ  PRIN88
+        BRA PRST2
+PRST11  CMPA  #'"
+        BEQ OKSTR
         CMPA #$1E
-        BNE PRINT2
-        LDAB  #4
-        BRA  PRINTE
-PRINT2  JSR  OUTCH
-        JSR ENLINE
-        BRA PRINT1
+        BNE PRST2
+        LDAB  #4    ; MISSING QUOTE ERROR
+        BRA PRINTE
+PRST2   JSR OUTCH
+        BSR ENLINE
+        BRA PRST1
+NOSTR   SEC
+        RTS
+OKSTR   CLC
+        RTS
+
+* PRINT COMMAND
+PRINT   LDX BASPNT
+PRINT0  BSR PRST
+        BCC PRIN88
 PRINT4  CMPA #$1E
         BNE PRINT6
         DEX
