@@ -202,7 +202,7 @@ CLRZPH  DEX
         STAA MAXLIN
         LDAA #$5F       ; '_' as RUBOUT for Apple-1
         STAA BACKSP
-        LDAA #$18
+        LDAA #$18       ; ^X
         STAA CANCEL
         LDX #RAMEND
         STX MEMEND
@@ -235,15 +235,15 @@ KEYBD1  BSR INCH
 KEYB10  CMPA #03        ; ^C?
         BNE KEYB11      ; No
         JMP READY
-KEYB11  CMPA CANCEL
+KEYB11  CMPA CANCEL     ; Cancel (default: ^X)?
         BEQ DEL
-        CMPA #$0D
+        CMPA #$0D       ; CR
         BEQ IEXIT
-KEYBD2  CMPA #$0A
+KEYBD2  CMPA #$0A       ; NL
         BEQ KEYBD1
-        CMPA #$15
+        CMPA #$15       ; NAK
         BEQ KEYBD1
-        CMPA #$13
+        CMPA #$13       ; DC3
         BEQ KEYBD1
 KEYB55  CMPA BACKSP
         BNE KEYBD3
@@ -260,7 +260,7 @@ DEL     BSR CRLF
 CNTLIN  LDX #PROMPT
         BSR OUTNCR
         BRA KEYBD0
-IEXIT   LDAA #$1E
+IEXIT   LDAA #$1E       ; RS
         STAA 0,X
         STX ENDBUF
         BSR CRLF
@@ -528,13 +528,13 @@ TSTV9   JSR  PULLX
         CLC
         RTS
 
-TSTLTR  CMPA #$41
+TSTLTR  CMPA #'A
         BMI NONO
-        CMPA #$5A
+        CMPA #'Z
         BLE YESNO
-TESTNO  CMPA #$30
+TESTNO  CMPA #'0
         BMI NONO
-        CMPA #$39
+        CMPA #'9
         BLE YESNO
 NONO    SEC
         RTS
@@ -1150,6 +1150,7 @@ TSTN0   SEC
 TSTN1   JSR  PUSHAE
         RTS
 
+* PARSE A LITERAL NUMBER
 INNUM   JSR  SKIPSP
         STAA TSIGN
         INX
@@ -1162,16 +1163,18 @@ INNUM0  JSR   SKIPSP
         BCC INNUM1
         RTS
 INNUM1  DEX
+* ACCUMULATE SUM OF DIGITS IN AB, INITALLY 0
         CLRA
         CLRB
 INNUM2  INX
         PSHA
         LDAA 0,X
         JSR TESTNO
-        BCS INNEX
-        SUBA #$30
+        BCS INNEX   ; EXIT HERE WHEN END IS REACHED
+        SUBA #'0
         STAA TNUMB
         PULA
+* AB*10 = AB(2+8) = (AB*2)+(AB*8) = (AB<<1)+(AB<<3)
         ASLB
         ROLA
         BCS INNERR
@@ -1186,10 +1189,11 @@ INNUM2  INX
         ADDB BNUMB
         ADCA ANUMB
         BCS INNERR
+* NOW, ADD CURRENT DIGIT (AB+=TNUMB)
         ADDB TNUMB
         ADCA #0
         BCC  INNUM2
-INNERR  LDAB #2
+INNERR  LDAB #2     ; NUMERIC OVERFLOW
         JMP  ERROR
 INNEX   PULA
         TST TSIGN
