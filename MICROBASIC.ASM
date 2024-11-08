@@ -149,9 +149,11 @@ GOLIST  FCC /GOSUB/
 PAUMSG  FCC /PAUSE/
         FCB $1E
         FDB PAUSE
-        FCB $20
+        FCC /CALL/
+        FCB $1E
+        FDB CALL
+        FCC / /
 COMEND  FCB $1E
-
 IMPLET  FDB LET
 
 RDYMSG  FCB $0D
@@ -1089,6 +1091,16 @@ RETUR1  DEX
         LDX  0,X
         STX BASLIN
         BRA BASIC
+
+CALL    LDX BASPNT
+        JSR EXPR
+        JSR NXTLIN
+        JSR PULLAE
+        STAA INDEX2
+        STAB INDEX2+1
+        LDX INDEX2
+        JSR 0,X
+        JMP BASIC
 
 PAUSE   LDX  #PAUMSG
         JSR OUTNCR
