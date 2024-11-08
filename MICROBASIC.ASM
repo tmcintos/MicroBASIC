@@ -152,6 +152,9 @@ PAUMSG  FCC /PAUSE/
         FCC /CALL/
         FCB $1E
         FDB CALL
+        FCC /POKE/
+        FCB $1E
+        FDB POKE
         FCC / /
 COMEND  FCB $1E
 IMPLET  FDB LET
@@ -1181,6 +1184,23 @@ TSTN0   SEC
         RTS
 TSTN1   JSR  PUSHAE
         RTS
+
+* POKE <addr>, <expr>
+POKE    LDX BASPNT
+        JSR EXPR
+        CMPA #',
+        BNE ERR3
+        JSR PULLAE
+        STAA INDEX2
+        STAB INDEX2+1
+        INX
+        JSR EXPR
+        CMPA #$1E
+        BNE ERR3
+        JSR PULLAE
+        LDX INDEX2
+        STAB 0,X
+        JMP REMARK
 
 * PARSE A LITERAL NUMBER
 INNUM   JSR  SKIPSP
