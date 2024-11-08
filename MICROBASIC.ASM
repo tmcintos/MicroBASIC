@@ -266,7 +266,8 @@ IEXIT   LDAA #$1E
         BSR CRLF
         RTS
 
-OUTCH   JMP ECHO
+OUTCH   ORAA #$80
+        JMP ECHO
 
 INCH   LDAA   KBD_CR   ; KEY READY?
        BPL    INCH     ; LOOP UNTIL READY.
