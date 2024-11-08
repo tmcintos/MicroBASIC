@@ -271,11 +271,15 @@ IEXIT   LDAA #$1E       ; RS
 OUTCH   ORAA #$80
         JMP ECHO
 
-INCH   LDAA   KBD_CR   ; KEY READY?
-       BPL    INCH     ; LOOP UNTIL READY.
-       LDAA   KBD      ; LOAD CHARACTER. B7 SHOULD BE 1
-       ANDA   #$7F     ; CLEAR B7
-       JMP    ECHO     ; ECHO CH
+INCH    BSR INCHNE
+        JMP    ECHO     ; ECHO CH
+
+* INPUT CHAR NO ECHO
+INCHNE  LDAA   KBD_CR   ; KEY READY?
+        BPL    INCHNE   ; LOOP UNTIL READY.
+        LDAA   KBD      ; LOAD CHARACTER. B7 SHOULD BE 1
+        ANDA   #$7F     ; CLEAR B7
+        RTS
 
 BREAK   JMP BREAK1
 BREAK1  PSHA
@@ -1102,7 +1106,10 @@ CALL    LDX BASPNT
         JSR 0,X
         JMP BASIC
 
-PAUSE   LDX  #PAUMSG
+PAUSE   LDX BASPNT
+        JSR PRST        ; PRINT OPTIONAL PROMPT
+        BCC PAUSE1
+        LDX  #PAUMSG
         JSR OUTNCR
         JSR PRINSP
         LDX  BASLIN
@@ -1111,7 +1118,7 @@ PAUSE   LDX  #PAUMSG
         LDAB 0,X
         INX
         JSR  PRN0
-PAUSE1  JSR  INCH
+PAUSE1  JSR  INCHNE
         CMPA #03        ; ^C?
         BNE PAUSE11
         JMP READY
