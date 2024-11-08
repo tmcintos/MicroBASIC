@@ -1100,7 +1100,10 @@ PAUSE   LDX  #PAUMSG
         INX
         JSR  PRN0
 PAUSE1  JSR  INCH
-        CMPA #$0D
+        CMPA #03        ; ^C?
+        BNE PAUSE11
+        JMP READY
+PAUSE11 CMPA #$0D       ; CR?
         BNE  PAUSE1
         JSR  CRLF
 PAUSE2  JMP  REMARK
