@@ -432,7 +432,6 @@ RAND1   ADCB 1,X
         JMP   TSTV9
 
 TSTV    JSR   SKIPSP
-        JSR   BREAK
         JSR   TSTLTR
         BCC   TSTV1
         RTS
@@ -1038,6 +1037,7 @@ BASIC   LDX BASLIN
 BASIC0  JMP READY
 BASIC1  TST BASLIN
         BEQ BASIC0
+        JSR BREAK
         INX
         INX
         LDAA 0,X
