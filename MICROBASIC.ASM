@@ -189,6 +189,9 @@ PROMPT  FCB '#
         FCB $1E
 
 * CLEAR SCREEN
+CLRSCR  LDX #PGCNTL
+        JSR OUTPUT
+        RTS
 PGCNTL  FCB HOME
         FCB ERASEDN
         FCB $1E
@@ -924,8 +927,7 @@ RUN2    STAA 0,X
         BNE RUN2
         JMP  BASIC
 
-CLIST   LDX #PGCNTL
-        JSR OUTPUT
+CLIST   JSR CLRSCR
         LDX  BASPNT
 CLIST1  JSR SKIPSP
         CMPA #$1E
