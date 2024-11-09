@@ -10,6 +10,21 @@
 *THE SP AND XSTACK WILL HAVE TO
 *BE MOVED IF THIS IS NOT THE CASE
 
+* ASCII CONTROL CHARS
+NUL     EQU $00     ; ignored
+TC3     EQU $03     ; ^C
+CR      EQU $0D
+LF      EQU $0A
+TC7     EQU $10
+DC3     EQU $13
+NAK     EQU $15     ; ^U erase to end of line
+TC9     EQU $16
+CAN     EQU $18     ; ^X erase line left of cursor
+
+* SWTPC TERMINAL CONTROL CHARS
+HOME    EQU TC7     ; move cursor to top left
+ERASEDN EQU TC9     ; erase to end of screen
+
 * APPLE-1 PIA REGISTERS
 KBD     EQU $D010
 KBD_CR  EQU $D011
@@ -43,7 +58,7 @@ PRCNT   RMB 1
 LINLEN  EQU 40
 MAXLIN  RMB 1 LINLEN
 BACKSP  RMB 1 $0F
-CANCEL  RMB 1 $18
+CANCEL  RMB 1 CAN
 MEMEND  RMB 2 RAMEND
 ARRTAB  RMB 2
 KEYWD   RMB 2
@@ -159,21 +174,23 @@ PAUMSG  FCC /PAUSE/
 COMEND  FCB $1E
 IMPLET  FDB LET
 
-RDYMSG  FCB $0D
-        FCB $0A
-        FCB $15
-        FCB $0A
-        FCB $15
+* CLEAR NEXT TWO LINES, THEN PRINT READY
+RDYMSG  FCB CR
+        FCB LF
+        FCB NAK
+        FCB LF
+        FCB NAK
         FCC /READY/
         FCB $1E
 
 PROMPT  FCB '#
-        FCB $00
+        FCB NUL
         FCB $1E
         FCB $1E
 
-PGCNTL  FCB $10
-        FCB $16
+* CLEAR SCREEN
+PGCNTL  FCB HOME
+        FCB ERASEDN
         FCB $1E
         FCB $1E
         FCB $1E
@@ -207,7 +224,7 @@ CLRZPH  DEX
         STAA MAXLIN
         LDAA #'_        ; '_' as RUBOUT for Apple-1
         STAA BACKSP
-        LDAA #$18       ; ^X
+        LDAA #CAN
         STAA CANCEL
         LDX #RAMEND
         STX MEMEND
@@ -233,7 +250,7 @@ KEYBD   LDAA #'?
 KEYBD0  LDX #BUFFER
         LDAB #10
 KEYBD1  BSR INCH
-        CMPA #$00
+        CMPA #NUL
         BNE KEYB10
         DECB
         BNE KEYBD1
@@ -242,13 +259,13 @@ KEYB10  CMPA #03        ; ^C?
         JMP READY
 KEYB11  CMPA CANCEL     ; Cancel (default: ^X)?
         BEQ DEL
-        CMPA #$0D       ; CR
+        CMPA #CR
         BEQ IEXIT
-KEYBD2  CMPA #$0A       ; NL
+KEYBD2  CMPA #LF
         BEQ KEYBD1
-        CMPA #$15       ; NAK
+        CMPA #NAK
         BEQ KEYBD1
-        CMPA #$13       ; DC3
+        CMPA #DC3
         BEQ KEYBD1
 KEYB55  CMPA BACKSP
         BNE KEYBD3
@@ -310,10 +327,11 @@ CRLF    BSR PUSHX
         BSR PULLX
         RTS
 
-CRLFST  FCB $00
-        FCB $0D
-        FCB $0A
-        FCB $15
+* ADVANCE TO NEXT LINE AND CLEAR IT
+CRLFST  FCB NUL
+        FCB CR
+        FCB LF
+        FCB NAK
 CREND   FCB $1E
         FCB $FF,$FF
         FCB $FF,$FF
@@ -412,7 +430,7 @@ OUTLI2  DEX
         JMP OUTPUT
 
 PRINSP  PSHA
-        LDAA #$20
+        LDAA #' '
         JSR OUTCH
         PULA
         RTS
@@ -771,7 +789,7 @@ FIND4   STX WORKBA
         RTS
 
 SKIPSP  LDAA 0,X
-        CMPA #$20
+        CMPA #' '
         BNE  SKIPEX
 INXSKP  INX
         BRA SKIPSP
@@ -1122,10 +1140,10 @@ PAUSE   LDX BASPNT
         INX
         JSR  PRN0
 PAUSE1  JSR  INCHNE
-        CMPA #03        ; ^C?
+        CMPA #TC3       ; ^C?
         BNE PAUSE11
         JMP READY
-PAUSE11 CMPA #$0D       ; CR?
+PAUSE11 CMPA #CR
         BNE  PAUSE1
         JSR  CRLF
 PAUSE2  JMP  REMARK
