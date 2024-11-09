@@ -11,12 +11,12 @@
 *BE MOVED IF THIS IS NOT THE CASE
 
 * APPLE-1 PIA REGISTERS
-KBD    EQU    $D010
-KBD_CR EQU    $D011
+KBD     EQU $D010
+KBD_CR  EQU $D011
 
 * A1MON68 SYMBOLS
-XAM    EQU    $0024    ; two bytes
-ECHO   EQU    $FFB4    ; PRINT CHAR IN A REG
+XAM     EQU $0024   ; two bytes
+ECHO    EQU $FFB4   ; PRINT CHAR IN A REG
 
 * AVOID A1MON68 ZP VARS $24-$38
         ORG $00
@@ -200,7 +200,7 @@ CLRZPH  DEX
         BNE CLRZPH
         LDAA #LINLEN
         STAA MAXLIN
-        LDAA #$5F       ; '_' as RUBOUT for Apple-1
+        LDAA #'_        ; '_' as RUBOUT for Apple-1
         STAA BACKSP
         LDAA #$18       ; ^X
         STAA CANCEL
