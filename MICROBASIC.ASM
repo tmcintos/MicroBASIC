@@ -21,10 +21,6 @@ NAK     EQU $15     ; ^U erase to end of line
 TC9     EQU $16
 CAN     EQU $18     ; ^X erase line left of cursor
 
-* SWTPC TERMINAL CONTROL CHARS
-HOME    EQU TC7     ; move cursor to top left
-ERASEDN EQU TC9     ; erase to end of screen
-
 * APPLE-1 PIA REGISTERS
 KBD     EQU $D010
 KBD_CR  EQU $D011
@@ -174,29 +170,23 @@ PAUMSG  FCC /PAUSE/
 COMEND  FCB $1E
 IMPLET  FDB LET
 
-* CLEAR NEXT TWO LINES, THEN PRINT READY
-RDYMSG  FCB CR
-        FCB LF
-        FCB NAK
-        FCB LF
-        FCB NAK
+* CLEAR NEXT LINE, THEN PRINT READY
+RDYMSG  FCB CR ; APPLE-1: JUST ECHO CR
         FCC /READY/
         FCB $1E
 
 PROMPT  FCB '#
-        FCB NUL
+        FCB $1E
         FCB $1E
         FCB $1E
 
 * CLEAR SCREEN
-CLRSCR  LDX #PGCNTL
-        JSR OUTPUT
+CLRSCR  LDAA #' '
+        LDX #960    ; APPLE-1: JUST USE 960 SPACES
+CLRSCR0 JSR OUTCH
+        DEX
+        BNE CLRSCR0
         RTS
-PGCNTL  FCB HOME
-        FCB ERASEDN
-        FCB $1E
-        FCB $1E
-        FCB $1E
 
 ERRMS1  FCC /ERROR# /
         FCB $1E
@@ -324,21 +314,11 @@ OUTNCR  LDAA 0,X
         BNE OUTPU2
         RTS
 
-CRLF    BSR PUSHX
-        LDX #CRLFST
-        BSR OUTNCR
-        BSR PULLX
+* ADVANCE TO NEXT LINE AND CLEAR IT
+CRLF    LDAA #CR        ; APPLE-1: JUST NEED CR
+        BSR OUTCH
         RTS
 
-* ADVANCE TO NEXT LINE AND CLEAR IT
-CRLFST  FCB NUL
-        FCB CR
-        FCB LF
-        FCB NAK
-CREND   FCB $1E
-        FCB $FF,$FF
-        FCB $FF,$FF
-        FCB $1E
 PUSHX   STX PUSHTX
         LDX XSTACK
         DEX
