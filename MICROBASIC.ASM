@@ -181,10 +181,10 @@ PROMPT  FCB '#
         FCB $1E
 
 * CLEAR SCREEN
-CLRSCR  LDAA #' '
-        LDX #960    ; APPLE-1: JUST USE 960 SPACES
+CLRSCR  LDAA #CR
+        LDAB #24        ; APPLE-1: JUST USE 24 CR'S
 CLRSCR0 JSR OUTCH
-        DEX
+        DECB
         BNE CLRSCR0
         RTS
 
