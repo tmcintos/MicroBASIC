@@ -181,12 +181,7 @@ PROMPT  FCB '#
         FCB $1E
 
 * CLEAR SCREEN
-CLRSCR  LDAA #CR
-        LDAB #24        ; APPLE-1: JUST USE 24 CR'S
-CLRSCR0 JSR OUTCH
-        DECB
-        BNE CLRSCR0
-        RTS
+CLRSCR  RTS             ; APPLE-1: DON'T BOTHER
 
 ERRMS1  FCC /ERROR# /
         FCB $1E
