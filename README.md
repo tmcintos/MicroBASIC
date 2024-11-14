@@ -29,6 +29,7 @@ All built products and intermediate files may be removed by running `make clean`
 * INPUT, PAUSE: Added optional prompt string.
 * Added CALL command as in Apple-1 BASIC.
 * Added POKE command as in Apple-1 BASIC.
+* INPUT: Fixed error in handling of empty line.
 
 ## Internal Development Notes:
 

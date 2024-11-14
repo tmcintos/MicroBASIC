@@ -1147,7 +1147,6 @@ INPUT1  JSR TSTV
         LDX BUFNXT
 INPUT2  BSR  INNUM
         BCC INPUT4
-        DEX
         LDAA 0,X
         CMPA #$1E
         BEQ INPUTS
@@ -1199,7 +1198,11 @@ POKE    LDX BASPNT
 
 * PARSE A LITERAL NUMBER
 INNUM   JSR  SKIPSP
-        STAA TSIGN
+        CMPA #$1E           ; END OF LINE?
+        BNE INSIGN
+        SEC                 ; END OF LINE
+        RTS
+INSIGN  STAA TSIGN
         INX
         CMPA #'-
         BEQ  INNUM0
