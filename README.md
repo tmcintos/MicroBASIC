@@ -76,6 +76,19 @@ assumed to reside within a single page.
     - =0: $0000 or in BUFFER (immediate command)
     - ≠0: SOURCE..MEMEND (program statement)
 
+- VARTAB is the variable table contains 26 entries
+  of 3 bytes each (78 bytes total):
+    - Bytes 0, 1 are the 16-bit value
+        - For integers this is the actual value.
+        - For arrays, it is a pointer to the array.
+    - Byte 2 is the type of variable:
+        - Zero: Integer
+        - Nonzero: DIMensioned array
+
+  *Note: In variable address calculations, the LSB
+         of the table address is assumed to be zero,
+         so it must be aligned on a page boundary.*
+
 ### I/O Functions
 
 - INCH:   Input ASCII character from keyboard and

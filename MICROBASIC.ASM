@@ -83,8 +83,11 @@ RAMEND  EQU $9FFF   ; TODO: RELOCATE PAGE $A0 USAGE
 NOWRAP  EQU 1       ; NONZERO TO DISABLE LINE WRAP
 
         ORG $300
-* VARIABLE TABLE - MUST FIT WITHIN A PAGE!
-VARSIZ  EQU 78
+* VARIABLE TABLE - MUST RESIDE AT A PAGE BOUNDARY!
+*   3 BYTES PER VAR:
+*       0,1: 16-BIT VALUE
+*         2: TYPE: ZERO=INTEGER, NONZERO=ARRAY
+VARSIZ  EQU 26*3    ; = 78 bytes
 VARTAB  RMB VARSIZ
 * SUBROUTINE STACK
 SUBCNT  EQU 16
@@ -439,100 +442,103 @@ RAND1   ADCB 1,X
         LDAB INDEX1+1
         JMP   TSTV9
 
+* TEST VAR; RET: C=0: VAL ON ASTACK, C=1: NOT VAR
 TSTV    JSR   SKIPSP
         JSR   TSTLTR
         BCC   TSTV1
         RTS
 
-TSTV1   CMPA #'R
+TSTV1   CMPA #'R        ; CHECK FOR RND FN CALL
         BNE TSTV2
         LDAB 1,X
         CMPB #'N
         BEQ  RANDOM
 TSTV2   JSR PUSHX
-        SUBA #$40
+        SUBA #'@        ; VAR INDEX: A=1, B=2, ETC.
         STAA VARPNT+1
         ASLA
         ADDA VARPNT+1
-        STAA VARPNT+1
+        STAA VARPNT+1   ; VARPNT = &VARTAB[3*INDEX]
         LDX VARPNT
         LDAA VARPNT
-        LDAB VARPNT+1
-        TST  2,X
+        LDAB VARPNT+1   ; AB = X = *VARPNT
+        TST  2,X        ; *(VARPNT+2)≠0 FOR ARRAYS
         BNE  TSTV20
         JMP  TSTV9
-
+* HANDLE ARRAY CASE
 TSTV20  LDX  0,X
-        STX  DIMPNT
+        STX  DIMPNT     ; VAR VALUE = ARRAY POINTER
         INX
         INX
-        STX DIMCAL
+        STX DIMCAL      ; SAVE ARRAY DATA POINTER
         JSR  PULLX
         JSR INXSKP
         CMPA #'(
         BEQ TSTV22
-TSTVER  JMP ERR3
+TSTVER  JMP ERR3        ; SYNTAX ERR: MISSING '('
 TSTV22  INX
-        JSR EXPR
-        JSR PUSHX
-        JSR PULLAE
-        TSTA
-        BEQ TSTV3
-SUBER1  JMP  SUBERR
-
-TSTV3   LDX DIMPNT
-        TSTB
-        BEQ  SUBER1
-        CMPB 0,X
-        BHI  SUBER1
-        LDAA 1,X
-        STAA ANUMB
-        BEQ TST666
-        LDX DIMCAL
-TSTV4   DECB
-        BEQ TSTV6
-        LDAA ANUMB
-TSTV5   INX
+        JSR EXPR        ; PUSH INNER INDEX EXPR
+        JSR PUSHX       ; SAVE X (SOURCE POINTER)
+        JSR PULLAE      ; POP INNER INDEX INTO AB
+        TSTA            ; UPPER BYTE MUST BE ZERO
+        BEQ TSTV3       ; IF IT IS, KEEP GOING.
+SUBER1  JMP  SUBERR     ; IF NOT, SUBSCRIPT ERROR
+* CHECK BOUNDS OF INDEX
+TSTV3   LDX DIMPNT      ; RELOAD ARRAY POINTER
+        TSTB            ; LOWER BYTE MUST BE > 0
+        BEQ  SUBER1     ; IF NOT, SUBSCRIPT ERROR
+        CMPB 0,X        ; CHECK INNER DIMENSION
+        BHI  SUBER1     ; IF OUT OF BOUNDS, ERROR
+        LDAA 1,X        ; CHECK OUTER DIMENSION
+        STAA ANUMB      ; SAVE FOR USE BELOW
+        BEQ TST666      ; IF ZERO, PROCEED BELOW.
+* TWO DIMENSIONAL ARRAY CASE
+        LDX DIMCAL      ; RELOAD ARRAY DATA POINTER
+TSTV4   DECB            ; DECREMENT INNER INDEX
+        BEQ TSTV6       ; AT ELEMENT; PROCEED BELOW
+        LDAA ANUMB      ; RELOAD OUTER DIMENSION
+TSTV5   INX             ; MOVE FORWARD ONE ELEMENT
         INX
-        DECA
-        BNE TSTV5
-        BRA TSTV4
-
-TSTV6   STX DIMCAL
-        JSR PULLX
-        JSR SKIPSP
-        CMPA #',
-        BNE TSTVER
+        DECA            ; DECREMENT OUTER INDEX
+        BNE TSTV5       ; LOOP FOR OUTER DIMENSION
+        BRA TSTV4       ; LOOP FOR INNER INDEX
+* NOW INDEX BASED ON OUTER DIMENSION
+TSTV6   STX DIMCAL      ; UPDATE ARRAY DATA POINTER
+        JSR PULLX       ; RELOAD X (SOURCE POINTER)
+        JSR SKIPSP      ; GET NEXT TOKEN
+        CMPA #',        ; IS IT A COMMA?
+        BNE TSTVER      ; IF NOT, SYNTAX ERROR
+        INX             ; ELSE, SKIP IT
+        JSR EXPR        ; PUSH OUTER INDEX EXPR
+        JSR PUSHX       ; SAVE X (SOURCE POINTER)
+        JSR PULLAE      ; POP OUTER INDEX INTO AB
+        TSTA            ; UPPER BYTE MUST BE ZERO
+        BNE SUBER1      ; IF NOT, SUBSCRIPT ERROR
+        LDX DIMPNT      ; RELOAD ARRAY POINTER
+        TSTB            ; LOWER BYTE MUST BE > 0
+        BEQ SUBER1      ; IF NOT, SUBSCRIPT ERROR
+        CMPB 1,X        ; CHECK OUTER DIMENSION
+        BHI SUBER1      ; IF OUT OF BOUNDS, ERROR
+TST666  LDX DIMCAL      ; RELOAD ARRAY DATA POINTER
+TSTV7   INX             ; MOVE FORWARD ONE ELEMENT
         INX
-        JSR EXPR
-        JSR PUSHX
-        JSR PULLAE
-        TSTA
-        BNE SUBER1
-        LDX DIMPNT
-        TSTB
-        BEQ SUBER1
-        CMPB 1,X
-        BHI SUBER1
-TST666  LDX DIMCAL
-TSTV7   INX
-        INX
-        DECB
-        BNE TSTV7
+        DECB            ; COUNT IT
+        BNE TSTV7       ; LOOP UNTIL INDEX REACHED
+        DEX             ; BACK UP ONE ELEMENT
         DEX
-        DEX
-        STX DIMCAL
-        JSR PULLX
-        JSR SKIPSP
-TSTV8   CMPA  #')
-        BNE TSTVER
-        JSR PUSHX
-        LDAA DIMCAL
+        STX DIMCAL      ; UPDATE ARRAY DATA POINTER
+        JSR PULLX       ; RELOAD X (SOURCE POINTER)
+        JSR SKIPSP      ; GET NEXT TOKEN
+TSTV8   CMPA  #')       ; IS IT ')'?
+        BNE TSTVER      ; IF NOT, SYNTAX ERROR
+        JSR PUSHX       ; SAVE X (SOURCE POINTER)
+        LDAA DIMCAL     ; LOAD ELEMENT INTO AB
         LDAB DIMCAL+1
-TSTV9   JSR  PULLX
-        INX
-        JSR PUSHAE
-        CLC
+* SUCCESS, RETURN C=0 WITH VALUE ON ASTACK
+TSTV9   JSR  PULLX      ; RELOAD X (SOURCE POINTER)
+        INX             ; MOVE PAST VAR NAME OR ')'
+        JSR PUSHAE      ; PUSH VALUE ON ASTACK
+        CLC             ; SET C=0 AND RETURN
         RTS
 
 TSTLTR  CMPA #'A
@@ -1432,85 +1438,88 @@ SIZE    LDAB ARRTAB+1
         JSR CRLF
 REMARK  JSR NXTLIN
         JMP BASIC
+* DIM COMMAND
 DIM     LDX BASPNT
 DIM1    JSR SKIPSP
         JSR TSTLTR
         BCC DIM111
         JMP DIMEX
-DIM111  SUBA #$40
+DIM111  SUBA #'@
         STAA DIMVAR+1
         ASLA
         ADDA DIMVAR+1
-        STAA DIMVAR+1
-        JSR PUSHX
-        LDX DIMVAR
+        STAA DIMVAR+1   ; DIMVAR = &VARTAB[3*INDEX]
+        JSR PUSHX       ; SAVE X (SOURCE POINTER)
+        LDX DIMVAR      ; X = VARIABLE ADDRESS
         TST 0,X
         BNE DIMERR
         TST 1,X
         BNE DIMERR
-        TST 2,X
-        BNE DIMERR
-        LDAA ARRTAB+1
+        TST 2,X         ; ENSURE ALL 3 BYTES ZERO
+        BNE DIMERR      ; IF NOT, ERROR: IN USE
+        LDAA ARRTAB+1   ; VALUE = NEXT ARRAY ADDR
         STAA 1,X
         LDAA ARRTAB
         STAA 0,X
-        STAA 2,X
-        JSR PULLX
-        JSR INXSKP
-        CMPA #'(
-        BEQ  DIM2
-DIMERR  LDAB #5
+        STAA 2,X        ; TYPE AS ARRAY, BYTE[2]≠0
+        JSR PULLX       ; RELOAD X (SOURCE POINTER)
+        JSR INXSKP      ; GET NEXT TOKEN
+        CMPA #'(        ; SHOULD BE '('
+        BEQ  DIM2       ; IF IT IS, PROCEED BELOW
+DIMERR  LDAB #5         ; ELSE SYNTAX ERROR
 DIMER1  JMP ERROR
-DIM2    INX
-        JSR EXPR
-        JSR PULPSH
-        TSTB
-        BEQ SUBERR
-        TSTA
-        BEQ  DIM3
-SUBERR  LDAB #15
+DIM2    INX             ; SKIP '('
+        JSR EXPR        ; PUSH INNER DIM EXPR
+        JSR PULPSH      ; COPY INNER DIM INTO AB
+        TSTB            ; LOWER BYTE MUST BE > 0
+        BEQ SUBERR      ; IF NOT, SUBSCRIPT ERROR
+        TSTA            ; UPPER BYTE MUST BE ZERO
+        BEQ  DIM3       ; IF SO, PROCEED BELOW
+SUBERR  LDAB #15        ; IF NOT, SUBSCRIPT ERROR
         BRA DIMER1
-DIM3    BSR STRSUB
-        LDAA 0,X
-        CMPA #',
-        BNE DIM6
-        INX
-        JSR EXPR
-        JSR PULPSH
-        TSTB
-        BEQ SUBERR
-        TSTA
-        BNE SUBERR
-        BSR STRSUB
-        JSR MPY
+DIM3    BSR STRSUB      ; STORE INNER DIM
+        LDAA 0,X        ; GET NEXT CHAR
+        CMPA #',        ; COMMA?
+        BNE DIM6        ; IF NOT, PROCEED BELOW
+        INX             ; ELSE, SKIP IT
+        JSR EXPR        ; PUSH OUTER DIM EXPR
+        JSR PULPSH      ; COPY OUTER DIM INTO AB
+        TSTB            ; LOWER BYTE MUST BE > 0
+        BEQ SUBERR      ; IF NOT, SUBSCRIPT ERROR
+        TSTA            ; UPPER BYTE MUST BE ZERO
+        BNE SUBERR      ; IF NOT, SUBSCRIPT ERROR
+        BSR STRSUB      ; STORE OUTER DIM
+        JSR MPY         ; MULTIPLY VALS ON ASTACK
 DIM6    CLRA
         LDAB #2
-        JSR PUSHAE
-        JSR MPY
-        LDAA 0,X
-        CMPA #')
-        BNE DIMERR
-        INX
-        LDAB ARRTAB+1
+        JSR PUSHAE      ; PUSH 2 ON ASTACK
+        JSR MPY         ; PUSH 2*INNER*OUTER
+        LDAA 0,X        ; GET NEXT CHAR
+        CMPA #')        ; SHOULD BE ')'
+        BNE DIMERR      ; IF NOT, SYNTAX ERROR
+        INX             ; ELSE, SKIP IT
+        LDAB ARRTAB+1   ; LOAD ARRTAB IN AB
         LDAA ARRTAB
-        JSR ADD1
+        JSR ADD1        ; ADD TO VALUE ON ASTACK
         CLRA
         LDAB #2
-        JSR ADD1
-        JSR PULLAE
-        CMPA MEMEND
-        BLS DIM7
-        JMP OVERFL
-DIM7    STAA ARRTAB
+        JSR ADD1        ; ADD 2 TO VALUE ON ASTACK
+        JSR PULLAE      ; POP THE RESULT INTO AB
+        CMPA MEMEND     ; CHECK FOR OUT OF MEMORY
+        BLS DIM7        ; IF < MEMEND, ALL GOOD
+        JMP OVERFL      ; ELSE, MEMORY FULL ERROR
+DIM7    STAA ARRTAB     ; UPDATE ARRTAB
         STAB ARRTAB+1
-        JSR SKIPSP
-        CMPA #',
-        BNE DIMEX
-        INX
-        JMP DIM1
-DIMEX   CMPA #$1E
-        BNE DIMERR
-        JMP REMARK
+        JSR SKIPSP      ; GET NEXT TOKEN
+        CMPA #',        ; COMMA?
+        BNE DIMEX       ; IF NOT, WE'RE DONE
+        INX             ; ELSE, SKIP IT
+        JMP DIM1        ; HANDLE NEXT DIM VARIABLE
+DIMEX   CMPA #$1E       ; AT END OF LINE?
+        BNE DIMERR      ; IF NOT, SYNTAX ERROR
+        JMP REMARK      ; PROCEED TO NEXT LINE
+
+* SUBROUTINE: STORE NEXT (INNER, OUTER) SUBSCRIPT
 STRSUB  JSR PUSHX
         LDX DIMVAR
         LDX 0,X
