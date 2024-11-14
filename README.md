@@ -31,6 +31,7 @@ All built products and intermediate files may be removed by running `make clean`
 * Added POKE command as in Apple-1 BASIC.
 * INPUT: Fixed error in handling of empty line.
 * Increased input buffer / max line length to 128.
+* Fixed off-by-one error in variable table indexing.
 
 ## Internal Development Notes:
 

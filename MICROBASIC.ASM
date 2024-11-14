@@ -454,7 +454,7 @@ TSTV1   CMPA #'R        ; CHECK FOR RND FN CALL
         CMPB #'N
         BEQ  RANDOM
 TSTV2   JSR PUSHX
-        SUBA #'@        ; VAR INDEX: A=1, B=2, ETC.
+        SUBA #'A        ; VAR INDEX: A=0, B=1, ETC.
         STAA VARPNT+1
         ASLA
         ADDA VARPNT+1
@@ -1444,7 +1444,7 @@ DIM1    JSR SKIPSP
         JSR TSTLTR
         BCC DIM111
         JMP DIMEX
-DIM111  SUBA #'@
+DIM111  SUBA #'A        ; VAR INDEX: A=0, B=1, ETC.
         STAA DIMVAR+1
         ASLA
         ADDA DIMVAR+1
