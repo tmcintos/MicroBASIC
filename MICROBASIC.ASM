@@ -649,7 +649,7 @@ MPY4    LSR 3,X
         ADDB 2,X
         ADCA 1,X
         BCC MPY5
-MPYERR  LDAA #2
+MPYERR  LDAB #2
         JMP ERROR
 MPY5    ASL 2,X
         ROL 1,X
