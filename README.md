@@ -20,7 +20,7 @@ All built products and intermediate files may be removed by running `make clean`
 * Reworked I/O functions for Apple-1.
 * Relocated code to $E000.
 * Added warm start entry point at $E003.
-* Relocated variable storage and arithmetic expression stack to page 3.
+* Relocated variable storage and runtime stacks to page 3.
 * Reorganized zero page usage to avoid conflicts with Apple-1 monitor.
 * PATCH command enters Apple-1 monitor (no MIKBUG).
 * Control-C (ASCII $03) may be used to abort INPUT.
@@ -30,15 +30,18 @@ All built products and intermediate files may be removed by running `make clean`
 * Added CALL command as in Apple-1 BASIC.
 * Added POKE command as in Apple-1 BASIC.
 * INPUT: Fixed error in handling of empty line.
+* Increased input buffer / max line length to 128.
 
 ## Internal Development Notes:
 
 ### Memory map:
 
     PAGE:
-    $00: Interpreter internal variables
-    $03: BASIC variable storage + arithmetic expression stack.
-    $04: BASIC program tokenized source lines (SOURCE)
+    $00: Interpreter internal variables and keyboard BUFFER
+    $01: Currently unused, except for wozmon stack.
+    $02: Currently unused, except for wozmon key buffer.
+    $03: BASIC variable storage + runtime stacks.
+    $04+: BASIC program tokenized source lines (SOURCE)
 
 ### Strings
 
@@ -62,6 +65,9 @@ assumed to reside within a single page.
 
 ### Variables
 
+- BUFFER is key input buffer; must reside in PAGE0
+  due to assumptions in handling of BASLIN/BASPNT
+  (see below)
 - SOURCE points to the start of the BASIC program.
 - BASLIN points to the start of the current line.
 - BASPNT points to the current position within BASLIN
