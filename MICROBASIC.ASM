@@ -425,24 +425,24 @@ RANDOM  INX
         CMPA #'D
         BNE  TSTVER
         JSR PUSHX
-        LDAA RNDVAL
+        LDAA RNDVAL     ; LOAD CURRENT RNDVAL IN AB
         LDAB RNDVAL+1
-        LDX  #0000
+        LDX  #0000      ; ADD WORDS UP TO RNDVAL
 RAND1   ADCB 1,X
         ADCA 0,X
         INX
         INX
         CPX #RNDVAL
         BNE  RAND1
-        ANDA #$7F
-        STAA RNDVAL
+        ANDA #$7F       ; MAKE IT POSITIVE
+        STAA RNDVAL     ; UPDATE RNDVAL
         STAB RNDVAL+1
-        STX   INDEX1
-        LDAA INDEX1
-        LDAB INDEX1+1
-        JMP   TSTV9
+        STX   INDEX1    ; INDEX1 = &RNDVAL
+        LDAA INDEX1     ; LOAD ADDRESS OF RNDVAL
+        LDAB INDEX1+1   ;  INTO AB
+        JMP   TSTV9     ; PUSH AND RETURN
 
-* TEST VAR; RET: C=0: VAL ON ASTACK, C=1: NOT VAR
+* TEST VAR; RET: C=0: ADDR ON ASTACK, C=1: NOT VAR
 TSTV    JSR   SKIPSP
         JSR   TSTLTR
         BCC   TSTV1
@@ -464,7 +464,7 @@ TSTV2   JSR PUSHX
         LDAB VARPNT+1   ; AB = X = *VARPNT
         TST  2,X        ; *(VARPNT+2)≠0 FOR ARRAYS
         BNE  TSTV20
-        JMP  TSTV9
+        JMP  TSTV9      ; PUSH VAR ADDR AND RETURN
 * HANDLE ARRAY CASE
 TSTV20  LDX  0,X
         STX  DIMPNT     ; VAR VALUE = ARRAY POINTER
@@ -532,12 +532,12 @@ TSTV7   INX             ; MOVE FORWARD ONE ELEMENT
 TSTV8   CMPA  #')       ; IS IT ')'?
         BNE TSTVER      ; IF NOT, SYNTAX ERROR
         JSR PUSHX       ; SAVE X (SOURCE POINTER)
-        LDAA DIMCAL     ; LOAD ELEMENT INTO AB
+        LDAA DIMCAL     ; LOAD ELEMENT ADDR INTO AB
         LDAB DIMCAL+1
 * SUCCESS, RETURN C=0 WITH VALUE ON ASTACK
 TSTV9   JSR  PULLX      ; RELOAD X (SOURCE POINTER)
         INX             ; MOVE PAST VAR NAME OR ')'
-        JSR PUSHAE      ; PUSH VALUE ON ASTACK
+        JSR PUSHAE      ; PUSH ADDRESS ON ASTACK
         CLC             ; SET C=0 AND RETURN
         RTS
 
